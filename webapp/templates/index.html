@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header class="hero">
@@ -16,6 +17,7 @@
       <p class="tag">AI-Powered Live Pose Trainer</p>
     </div>
     <div class="status-indicator">
+      <a href="/leaderboard" class="btn-secondary" style="margin-right: 1rem; padding: 0.25rem 0.75rem; font-size: 0.85rem; text-decoration: none; color: inherit;">🏆 Leaderboard</a>
       <button id="translateBtn" class="btn-secondary" style="margin-right: 1rem; padding: 0.25rem 0.75rem; font-size: 0.85rem;">中文/EN</button>
       <div id="statusDot" class="status-dot"></div>
       <span id="status">Connecting...</span>
@@ -128,6 +130,15 @@
             </div>
         </div>
       </div>
+
+      <!-- Billboard Chart -->
+      <div class="card">
+        <h3 data-i18n="stats_chart">Live Statistics</h3>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="statsChart"></canvas>
+        </div>
+      </div>
+
     </main>
   </div>
 

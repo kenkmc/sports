@@ -15,6 +15,8 @@ from pathlib import Path
 import argparse
 import time
 import threading
+import json
+import glob
 
 # Ensure repo root is on sys.path so `from src.*` imports work when running this file
 ROOT = Path(__file__).resolve().parents[1]
@@ -430,6 +432,65 @@ def serve_demo(name):
     return send_from_directory(ROOT, filename)
 
 
+@app.route('/leaderboard')
+def leaderboard():
+    data = get_leaderboard_data()
+    return render_template('leaderboard.html', leaderboard=data)
+
+def get_leaderboard_data():
+    leaderboard = {'pushup': {}, 'squat': {}, 'jump': {}, 'jumping_jack': {}, 'lunge': {}}
+    files = glob.glob(os.path.join(_sessions_dir, '*.jsonl'))
+    
+    for fpath in files:
+        try:
+            with open(fpath, 'r', encoding='utf8') as f:
+                # Read first line for metadata
+                first_line = f.readline()
+                if not first_line: continue
+                try:
+                    meta_data = json.loads(first_line)
+                    meta = meta_data.get('meta', {})
+                    name = meta.get('name', 'Anonymous')
+                except json.JSONDecodeError:
+                    continue
+                
+                if not name: name = 'Anonymous'
+                
+                # Read last line for final counts
+                last_line = None
+                for line in f:
+                    if line.strip():
+                        last_line = line
+                
+                if not last_line: continue
+                
+                try:
+                    record = json.loads(last_line)
+                    counts = record.get('counts', {})
+                    totals = counts.get('totals', {})
+                    
+                    for sport in ['pushup', 'squat', 'jump', 'jumping_jack', 'lunge']:
+                        score = totals.get(sport, 0)
+                        if score > 0:
+                            current_max = leaderboard[sport].get(name, 0)
+                            if score > current_max:
+                                leaderboard[sport][name] = score
+                except json.JSONDecodeError:
+                    continue
+                        
+        except Exception as e:
+            LOG.error(f"Error parsing session {fpath}: {e}")
+            continue
+            
+    # Convert to list format
+    result = {}
+    for sport, players in leaderboard.items():
+        sorted_players = [{'name': k, 'score': v} for k, v in players.items()]
+        sorted_players.sort(key=lambda x: x['score'], reverse=True)
+        result[sport] = sorted_players
+        
+    return result
+
 def start_detector(complexity=0):
     global pose_detector, tracker
     # import here to avoid heavy imports at module import time
@@ -453,3 +514,4 @@ if __name__ == '__main__':
     print('Starting webapp on http://%s:%s' % (args.host, args.port))
     # Use eventlet for SocketIO server
     socketio.run(app, host=args.host, port=args.port)
+

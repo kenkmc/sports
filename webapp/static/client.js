@@ -20,7 +20,58 @@ const downloadSession = document.getElementById('downloadSession');
 const athleteName = document.getElementById('athleteName');
 const sportSelect = document.getElementById('sportSelect');
 const modeSelect = document.getElementById('modeSelect');
-const translateBtn = document.getElementById('translateBtn');
+const statsChartCtx = document.getElementById('statsChart').getContext('2d');
+
+// Initialize Chart
+const statsChart = new Chart(statsChartCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Push-up', 'Squat', 'Jump'],
+        datasets: [{
+            label: 'Total Reps',
+            data: [0, 0, 0],
+            backgroundColor: [
+                'rgba(56, 189, 248, 0.6)', // accent-primary
+                'rgba(129, 140, 248, 0.6)', // accent-secondary
+                'rgba(251, 191, 36, 0.6)'  // warning
+            ],
+            borderColor: [
+                'rgba(56, 189, 248, 1)',
+                'rgba(129, 140, 248, 1)',
+                'rgba(251, 191, 36, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
 
 const I18N = {
   en: {
@@ -47,7 +98,8 @@ const I18N = {
     status: 'Status',
     pushups: 'Push-ups',
     squats: 'Squats',
-    jumps: 'Jumps'
+    jumps: 'Jumps',
+    stats_chart: 'Live Statistics'
   },
   zh: {
     controls: '控制面板',
@@ -73,7 +125,8 @@ const I18N = {
     status: '狀態',
     pushups: '伏地挺身',
     squats: '深蹲',
-    jumps: '跳躍'
+    jumps: '跳躍',
+    stats_chart: '即時統計圖表'
   }
 };
 
@@ -123,6 +176,14 @@ socket.on('annotated', (data) => {
       if (totalsPushupEl && typeof counts.totals.pushup === 'number') totalsPushupEl.textContent = counts.totals.pushup;
       if (totalsSquatEl && typeof counts.totals.squat === 'number') totalsSquatEl.textContent = counts.totals.squat;
       if (totalsJumpEl && typeof counts.totals.jump === 'number') totalsJumpEl.textContent = counts.totals.jump;
+      
+      // Update Chart
+      statsChart.data.datasets[0].data = [
+          counts.totals.pushup || 0,
+          counts.totals.squat || 0,
+          counts.totals.jump || 0
+      ];
+      statsChart.update('none'); // 'none' mode for performance
     }
   }
 });
