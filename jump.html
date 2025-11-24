@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jump Animation</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="skeleton-canvas"></canvas>
+
+    <script>
+    const canvas = document.getElementById('skeleton-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const abstractFloorY = 300 * 0.92;
+
+    const crouchPose = {
+        head: { x: 180, y: 95 },
+        neck: { x: 180, y: 125 },
+        shoulderL: { x: 162, y: 150 },
+        shoulderR: { x: 202, y: 150 },
+        elbowL: { x: 152, y: 190 },
+        elbowR: { x: 212, y: 190 },
+        wristL: { x: 150, y: 225 },
+        wristR: { x: 218, y: 220 },
+        spine: { x: 182, y: 185 },
+        hipL: { x: 170, y: 215 },
+        hipR: { x: 198, y: 218 },
+        kneeL: { x: 175, y: 260 },
+        kneeR: { x: 205, y: 265 },
+        ankleL: { x: 175, y: abstractFloorY },
+        ankleR: { x: 205, y: abstractFloorY }
+    };
+
+    const flightPose = {
+        head: { x: 178, y: 40 },
+        neck: { x: 178, y: 75 },
+        shoulderL: { x: 158, y: 95 },
+        shoulderR: { x: 205, y: 100 },
+        elbowL: { x: 145, y: 120 },
+        elbowR: { x: 225, y: 130 },
+        wristL: { x: 140, y: 150 },
+        wristR: { x: 235, y: 155 },
+        spine: { x: 182, y: 135 },
+        hipL: { x: 170, y: 165 },
+        hipR: { x: 200, y: 170 },
+        kneeL: { x: 168, y: 210 },
+        kneeR: { x: 202, y: 215 },
+        ankleL: { x: 170, y: 240 },
+        ankleR: { x: 205, y: 242 }
+    };
+
+    const bones = [
+        ['head', 'neck'],
+        ['neck', 'shoulderL'],
+        ['neck', 'shoulderR'],
+        ['shoulderL', 'elbowL'],
+        ['elbowL', 'wristL'],
+        ['shoulderR', 'elbowR'],
+        ['elbowR', 'wristR'],
+        ['neck', 'spine'],
+        ['spine', 'hipL'],
+        ['spine', 'hipR'],
+        ['hipL', 'hipR'],
+        ['hipL', 'kneeL'],
+        ['hipR', 'kneeR'],
+        ['kneeL', 'ankleL'],
+        ['kneeR', 'ankleR']
+    ];
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        return { width: rect.width, height: rect.height };
+    }
+
+    function drawBone(p1, p2, scale) {
+        ctx.beginPath();
+        ctx.moveTo(p1.x * scale.x, p1.y * scale.y);
+        ctx.lineTo(p2.x * scale.x, p2.y * scale.y);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawJoint(p, scale) {
+        ctx.beginPath();
+        ctx.arc(p.x * scale.x, p.y * scale.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#fbbf24';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.5)';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawFloor(width, height, lift) {
+        const floorY = height * 0.92;
+        
+        // Grid floor
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        
+        // Horizontal lines
+        for (let i = 0; i < 5; i++) {
+            const y = floorY + (i * 15);
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+        }
+        
+        // Perspective lines
+        const centerX = width / 2;
+        for (let i = -5; i <= 5; i++) {
+            const x = centerX + (i * 40);
+            ctx.moveTo(x, floorY);
+            ctx.lineTo(x + (i * 20), height);
+        }
+        ctx.stroke();
+
+        // Main floor line
+        ctx.beginPath();
+        ctx.moveTo(0, floorY);
+        ctx.lineTo(width, floorY);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.3)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Shadow
+        const shadowRadius = Math.max(40, 120 * (1 - lift));
+        ctx.save();
+        ctx.translate(width / 2, floorY + 6);
+        ctx.scale(shadowRadius / 100, 1);
+        ctx.beginPath();
+        ctx.arc(0, 0, 60, 0, 2 * Math.PI);
+        ctx.fillStyle = `rgba(56, 189, 248, ${0.1 + 0.1 * (1 - lift)})`;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function easeOutQuad(t) {
+        return 1 - (1 - t) * (1 - t);
+    }
+
+    function easeInOut(t) {
+        return 0.5 - 0.5 * Math.cos(Math.PI * t);
+    }
+
+    const startTime = Date.now();
+    const animationDuration = 1800;
+
+    function animate() {
+        const dims = resize();
+        const { width, height } = dims;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const elapsed = Date.now() - startTime;
+        const raw = (elapsed % animationDuration) / animationDuration;
+        let t = raw * 2;
+        if (t > 1) {
+            t = 2 - t;
+        }
+        const lift = easeOutQuad(t);
+        const interp = easeInOut(t);
+
+        const currentPose = {};
+        for (const joint in crouchPose) {
+            currentPose[joint] = {
+                x: crouchPose[joint].x + (flightPose[joint].x - crouchPose[joint].x) * interp,
+                y: crouchPose[joint].y + (flightPose[joint].y - crouchPose[joint].y) * interp
+            };
+        }
+
+        const scale = {
+            x: width / 350,
+            y: height / 300
+        };
+
+        drawFloor(width, height, lift);
+
+        bones.forEach(([a, b]) => {
+            drawBone(currentPose[a], currentPose[b], scale);
+        });
+
+        for (const joint in currentPose) {
+            drawJoint(currentPose[joint], scale);
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    animate();
+    </script>
+</body>
+</html>

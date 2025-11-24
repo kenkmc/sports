@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MoveFit — AI Pose Trainer</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <h1>MoveFit</h1>
+      <p class="tag">AI-Powered Live Pose Trainer</p>
+    </div>
+    <div class="status-indicator">
+      <div id="statusDot" class="status-dot"></div>
+      <span id="status">Connecting...</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <aside class="sidebar">
+      <!-- Controls Card -->
+      <div class="card">
+        <h3>Controls</h3>
+        <div class="control-group">
+          <div class="btn-group">
+            <button id="start" class="btn-primary">Start Camera</button>
+            <button id="stop" class="btn-danger">Stop</button>
+          </div>
+          
+          <div class="control-item">
+            <label>Athlete Name</label>
+            <input id="athleteName" type="text" placeholder="Enter your name" />
+          </div>
+
+          <div class="control-item">
+            <label>Sport</label>
+            <div class="input-wrapper">
+              <select id="sportSelect">
+                <option value="pushup">Push-up</option>
+                <option value="squat">Squat</option>
+                <option value="jump">Jump</option>
+                <option value="jumping_jack">Jumping Jack</option>
+                <option value="lunge">Lunge</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-item">
+            <label>Mode</label>
+            <div class="input-wrapper">
+              <select id="modeSelect">
+                <option value="count">Rep Counter</option>
+                <option value="time">Timer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-item">
+            <label>Session Recording</label>
+            <div class="btn-group">
+              <button id="recStart" class="btn-record">Record</button>
+              <button id="recStop" class="btn-danger" disabled>Stop</button>
+            </div>
+          </div>
+          
+          <div class="control-item">
+             <label>Previous Sessions</label>
+             <select id="sessionsList"></select>
+             <a id="downloadSession" href="#" target="_blank" style="font-size: 0.85rem; color: var(--accent-primary); text-decoration: none; margin-top: 0.5rem; display: inline-block;">Download Selected Session</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo Card -->
+      <div class="card">
+        <h3>Reference Demo</h3>
+        <div id="demoAnim" class="demo-container"></div>
+      </div>
+    </aside>
+
+    <main class="content-area">
+      <!-- Live View -->
+      <div class="live-view-container">
+        <img id="annotated" class="live-view-img" src="" alt="Waiting for camera..." />
+        
+        <div class="overlay-stats">
+          <div class="stat-badge">FPS: <span id="fps">0</span></div>
+          <div class="stat-badge">Kpts: <span id="kpts">0</span></div>
+          <div class="stat-badge">Conf: <span id="confidence">0.00</span></div>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-box large">
+          <span class="metric-label">Current Reps</span>
+          <span id="repCount" class="metric-value">0</span>
+        </div>
+        
+        <div class="metric-box">
+          <span class="metric-label">Phase</span>
+          <span id="repPhase" class="metric-value" style="font-size: 1.5rem;">idle</span>
+        </div>
+        
+        <div class="metric-box">
+          <span class="metric-label">Status</span>
+          <span id="repStatus" class="metric-value" style="font-size: 1.5rem;">—</span>
+        </div>
+
+        <div class="metric-box large" style="text-align: left; display: flex; justify-content: space-around;">
+            <div>
+                <span class="metric-label">Push-ups</span>
+                <span id="totalPushup" class="metric-value" style="font-size: 1.5rem;">0</span>
+            </div>
+            <div>
+                <span class="metric-label">Squats</span>
+                <span id="totalSquat" class="metric-value" style="font-size: 1.5rem;">0</span>
+            </div>
+            <div>
+                <span class="metric-label">Jumps</span>
+                <span id="totalJump" class="metric-value" style="font-size: 1.5rem;">0</span>
+            </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <video id="video" class="capture-video" autoplay playsinline muted></video>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/static/client.js"></script>
+  <script>
+    // Update status dot based on connection state
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('status');
+    
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        const text = mutation.target.textContent.toLowerCase();
+        if (text.includes('connected') || text.includes('ready')) {
+          statusDot.className = 'status-dot active';
+        } else if (text.includes('error') || text.includes('disconnected')) {
+          statusDot.className = 'status-dot error';
+        } else {
+          statusDot.className = 'status-dot';
+        }
+      });
+    });
+    
+    observer.observe(document.getElementById('status'), { childList: true, characterData: true, subtree: true });
+  </script>
+</body>
+</html>

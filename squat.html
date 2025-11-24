@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squat Animation</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="skeleton-canvas"></canvas>
+
+    <script>
+    const canvas = document.getElementById('skeleton-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const abstractFloorY = 300 * 0.9;
+
+    const standPose = {
+        head: { x: 205, y: 60 },
+        neck: { x: 210, y: 105 },
+        shoulder: { x: 210, y: 145 },
+        elbowFront: { x: 250, y: 145 },
+        wristFront: { x: 290, y: 145 },
+        spine: { x: 210, y: 205 },
+        hip: { x: 210, y: 240 },
+        kneeFront: { x: 210, y: 285 },
+        ankleFront: { x: 210, y: abstractFloorY },
+        hipBack: { x: 206, y: 243 },
+        kneeBack: { x: 206, y: 288 },
+        ankleBack: { x: 206, y: abstractFloorY }
+    };
+
+    const squatPose = {
+        head: { x: 228, y: 120 },
+        neck: { x: 222, y: 160 },
+        shoulder: { x: 220, y: 200 },
+        elbowFront: { x: 260, y: 200 },
+        wristFront: { x: 300, y: 200 },
+        spine: { x: 210, y: 245 },
+        hip: { x: 208, y: 270 },
+        kneeFront: { x: 238, y: 292 },
+        ankleFront: { x: 252, y: abstractFloorY },
+        hipBack: { x: 204, y: 272 },
+        kneeBack: { x: 232, y: 294 },
+        ankleBack: { x: 246, y: abstractFloorY }
+    };
+
+    const bones = [
+        ['head', 'neck'],
+        ['neck', 'shoulder'],
+        ['shoulder', 'elbowFront'],
+        ['elbowFront', 'wristFront'],
+        ['neck', 'spine'],
+        ['spine', 'hip'],
+        ['spine', 'hipBack'],
+        ['hip', 'kneeFront'],
+        ['kneeFront', 'ankleFront'],
+        ['hipBack', 'kneeBack'],
+        ['kneeBack', 'ankleBack']
+    ];
+
+    function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        return { width: rect.width, height: rect.height };
+    }
+
+    function drawBone(p1, p2, scale) {
+        ctx.beginPath();
+        ctx.moveTo(p1.x * scale.x, p1.y * scale.y);
+        ctx.lineTo(p2.x * scale.x, p2.y * scale.y);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.5)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawJoint(p, scale) {
+        ctx.beginPath();
+        ctx.arc(p.x * scale.x, p.y * scale.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#fbbf24';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.5)';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawFloor(width, height) {
+        const floorY = height * 0.9;
+        
+        // Grid floor
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        
+        // Horizontal lines
+        for (let i = 0; i < 5; i++) {
+            const y = floorY + (i * 15);
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+        }
+        
+        // Perspective lines
+        const centerX = width / 2;
+        for (let i = -5; i <= 5; i++) {
+            const x = centerX + (i * 40);
+            ctx.moveTo(x, floorY);
+            ctx.lineTo(x + (i * 20), height);
+        }
+        ctx.stroke();
+
+        // Main floor line
+        ctx.beginPath();
+        ctx.moveTo(0, floorY);
+        ctx.lineTo(width, floorY);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.3)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function easeInOut(t) {
+        return 0.5 - 0.5 * Math.cos(Math.PI * t);
+    }
+
+    const startTime = Date.now();
+    const animationDuration = 2200;
+
+    function animate() {
+        const dims = resize();
+        const { width, height } = dims;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const elapsed = Date.now() - startTime;
+        const raw = (elapsed % animationDuration) / animationDuration;
+        let t = raw * 2;
+        if (t > 1) {
+            t = 2 - t;
+        }
+        t = easeInOut(t);
+
+        const currentPose = {};
+        for (const joint in standPose) {
+            currentPose[joint] = {
+                x: standPose[joint].x + (squatPose[joint].x - standPose[joint].x) * t,
+                y: standPose[joint].y + (squatPose[joint].y - standPose[joint].y) * t
+            };
+        }
+
+        const scale = {
+            x: width / 350,
+            y: height / 300
+        };
+
+        drawFloor(width, height);
+
+        bones.forEach(([a, b]) => {
+            drawBone(currentPose[a], currentPose[b], scale);
+        });
+
+        for (const joint in currentPose) {
+            drawJoint(currentPose[joint], scale);
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    animate();
+    </script>
+</body>
+</html>
