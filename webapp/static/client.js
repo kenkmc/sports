@@ -20,8 +20,91 @@ const downloadSession = document.getElementById('downloadSession');
 const athleteName = document.getElementById('athleteName');
 const sportSelect = document.getElementById('sportSelect');
 const modeSelect = document.getElementById('modeSelect');
+const translateBtn = document.getElementById('translateBtn');
 
-socket.on('connect', () => { status.textContent = 'Connected'; });
+const I18N = {
+  en: {
+    controls: 'Controls',
+    start_camera: 'Start Camera',
+    stop: 'Stop',
+    athlete_name: 'Athlete Name',
+    sport: 'Sport',
+    pushup: 'Push-up',
+    squat: 'Squat',
+    jump: 'Jump',
+    jumping_jack: 'Jumping Jack',
+    lunge: 'Lunge',
+    mode: 'Mode',
+    rep_counter: 'Rep Counter',
+    timer: 'Timer',
+    session_recording: 'Session Recording',
+    record: 'Record',
+    previous_sessions: 'Previous Sessions',
+    download_selected: 'Download Selected Session',
+    reference_demo: 'Reference Demo',
+    current_reps: 'Current Reps',
+    phase: 'Phase',
+    status: 'Status',
+    pushups: 'Push-ups',
+    squats: 'Squats',
+    jumps: 'Jumps'
+  },
+  zh: {
+    controls: '控制面板',
+    start_camera: '開啟相機',
+    stop: '停止',
+    athlete_name: '運動員姓名',
+    sport: '運動項目',
+    pushup: '伏地挺身',
+    squat: '深蹲',
+    jump: '跳躍',
+    jumping_jack: '開合跳',
+    lunge: '弓箭步',
+    mode: '模式',
+    rep_counter: '計數器',
+    timer: '計時器',
+    session_recording: '錄製訓練',
+    record: '錄製',
+    previous_sessions: '歷史紀錄',
+    download_selected: '下載選定紀錄',
+    reference_demo: '動作示範',
+    current_reps: '目前次數',
+    phase: '階段',
+    status: '狀態',
+    pushups: '伏地挺身',
+    squats: '深蹲',
+    jumps: '跳躍'
+  }
+};
+
+let currentLang = 'en';
+
+function updateLanguage() {
+  const t = I18N[currentLang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) {
+      el.textContent = t[key];
+    }
+  });
+  // Notify server to update overlay text
+  if (socket && socket.connected) {
+    socket.emit('set_language', { lang: currentLang });
+  }
+}
+
+if (translateBtn) {
+  translateBtn.addEventListener('click', () => {
+    currentLang = currentLang === 'en' ? 'zh' : 'en';
+    updateLanguage();
+  });
+}
+
+socket.on('connect', () => { 
+  status.textContent = 'Connected'; 
+  // Sync language on reconnect
+  socket.emit('set_language', { lang: currentLang });
+});
 socket.on('annotated', (data) => {
   console.log('Received annotated frame, kpts=', data.kpts);
   img.src = data.image;

@@ -16,6 +16,7 @@
       <p class="tag">AI-Powered Live Pose Trainer</p>
     </div>
     <div class="status-indicator">
+      <button id="translateBtn" class="btn-secondary" style="margin-right: 1rem; padding: 0.25rem 0.75rem; font-size: 0.85rem;">中文/EN</button>
       <div id="statusDot" class="status-dot"></div>
       <span id="status">Connecting...</span>
     </div>
@@ -25,60 +26,60 @@
     <aside class="sidebar">
       <!-- Controls Card -->
       <div class="card">
-        <h3>Controls</h3>
+        <h3 data-i18n="controls">Controls</h3>
         <div class="control-group">
           <div class="btn-group">
-            <button id="start" class="btn-primary">Start Camera</button>
-            <button id="stop" class="btn-danger">Stop</button>
+            <button id="start" class="btn-primary" data-i18n="start_camera">Start Camera</button>
+            <button id="stop" class="btn-danger" data-i18n="stop">Stop</button>
           </div>
           
           <div class="control-item">
-            <label>Athlete Name</label>
+            <label data-i18n="athlete_name">Athlete Name</label>
             <input id="athleteName" type="text" placeholder="Enter your name" />
           </div>
 
           <div class="control-item">
-            <label>Sport</label>
+            <label data-i18n="sport">Sport</label>
             <div class="input-wrapper">
               <select id="sportSelect">
-                <option value="pushup">Push-up</option>
-                <option value="squat">Squat</option>
-                <option value="jump">Jump</option>
-                <option value="jumping_jack">Jumping Jack</option>
-                <option value="lunge">Lunge</option>
+                <option value="pushup" data-i18n="pushup">Push-up</option>
+                <option value="squat" data-i18n="squat">Squat</option>
+                <option value="jump" data-i18n="jump">Jump</option>
+                <option value="jumping_jack" data-i18n="jumping_jack">Jumping Jack</option>
+                <option value="lunge" data-i18n="lunge">Lunge</option>
               </select>
             </div>
           </div>
 
           <div class="control-item">
-            <label>Mode</label>
+            <label data-i18n="mode">Mode</label>
             <div class="input-wrapper">
               <select id="modeSelect">
-                <option value="count">Rep Counter</option>
-                <option value="time">Timer</option>
+                <option value="count" data-i18n="rep_counter">Rep Counter</option>
+                <option value="time" data-i18n="timer">Timer</option>
               </select>
             </div>
           </div>
 
           <div class="control-item">
-            <label>Session Recording</label>
+            <label data-i18n="session_recording">Session Recording</label>
             <div class="btn-group">
-              <button id="recStart" class="btn-record">Record</button>
-              <button id="recStop" class="btn-danger" disabled>Stop</button>
+              <button id="recStart" class="btn-record" data-i18n="record">Record</button>
+              <button id="recStop" class="btn-danger" disabled data-i18n="stop">Stop</button>
             </div>
           </div>
           
           <div class="control-item">
-             <label>Previous Sessions</label>
+             <label data-i18n="previous_sessions">Previous Sessions</label>
              <select id="sessionsList"></select>
-             <a id="downloadSession" href="#" target="_blank" style="font-size: 0.85rem; color: var(--accent-primary); text-decoration: none; margin-top: 0.5rem; display: inline-block;">Download Selected Session</a>
+             <a id="downloadSession" href="#" target="_blank" style="font-size: 0.85rem; color: var(--accent-primary); text-decoration: none; margin-top: 0.5rem; display: inline-block;" data-i18n="download_selected">Download Selected Session</a>
           </div>
         </div>
       </div>
 
       <!-- Demo Card -->
       <div class="card">
-        <h3>Reference Demo</h3>
+        <h3 data-i18n="reference_demo">Reference Demo</h3>
         <div id="demoAnim" class="demo-container"></div>
       </div>
     </aside>
@@ -98,31 +99,31 @@
       <!-- Metrics -->
       <div class="metrics-grid">
         <div class="metric-box large">
-          <span class="metric-label">Current Reps</span>
+          <span class="metric-label" data-i18n="current_reps">Current Reps</span>
           <span id="repCount" class="metric-value">0</span>
         </div>
         
         <div class="metric-box">
-          <span class="metric-label">Phase</span>
+          <span class="metric-label" data-i18n="phase">Phase</span>
           <span id="repPhase" class="metric-value" style="font-size: 1.5rem;">idle</span>
         </div>
         
         <div class="metric-box">
-          <span class="metric-label">Status</span>
+          <span class="metric-label" data-i18n="status">Status</span>
           <span id="repStatus" class="metric-value" style="font-size: 1.5rem;">—</span>
         </div>
 
         <div class="metric-box large" style="text-align: left; display: flex; justify-content: space-around;">
             <div>
-                <span class="metric-label">Push-ups</span>
+                <span class="metric-label" data-i18n="pushups">Push-ups</span>
                 <span id="totalPushup" class="metric-value" style="font-size: 1.5rem;">0</span>
             </div>
             <div>
-                <span class="metric-label">Squats</span>
+                <span class="metric-label" data-i18n="squats">Squats</span>
                 <span id="totalSquat" class="metric-value" style="font-size: 1.5rem;">0</span>
             </div>
             <div>
-                <span class="metric-label">Jumps</span>
+                <span class="metric-label" data-i18n="jumps">Jumps</span>
                 <span id="totalJump" class="metric-value" style="font-size: 1.5rem;">0</span>
             </div>
         </div>

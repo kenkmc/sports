@@ -58,6 +58,33 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
 LOG.addHandler(handler)
 
+# Language state
+_language = 'en'
+
+TRANSLATIONS = {
+    'en': {
+        'Sport': 'Sport',
+        'Reps': 'Reps',
+        'Status': 'Status',
+        'Conf': 'Conf',
+        'LOW_VISIBILITY': '! LOW VISIBILITY !',
+        'CHECK_LIGHTING': 'Check lighting',
+        'TOO_FAR': '! TOO FAR !',
+        'TOO_CLOSE': '! TOO CLOSE !',
+        'NO_PERSON': '! NO PERSON !'
+    },
+    'zh': {
+        'Sport': '運動',
+        'Reps': '次數',
+        'Status': '狀態',
+        'Conf': '信心',
+        'LOW_VISIBILITY': '! 能見度低 !',
+        'CHECK_LIGHTING': '檢查光線',
+        'TOO_FAR': '! 太遠 !',
+        'TOO_CLOSE': '! 太近 !',
+        'NO_PERSON': '! 無人 !'
+    }
+}
 
 @app.route('/')
 def index():
@@ -86,7 +113,9 @@ def on_connect():
         def _init():
             try:
                 socketio.emit('status', {'state': 'initializing'})
-                start_detector()
+                # Revert to Lite model (0) for better FPS.
+                # We will rely on better user positioning (calibration) for accuracy.
+                start_detector(complexity=0)
                 socketio.emit('status', {'state': 'ready'})
                 print('Pose detector initialized')
             except Exception as e:
@@ -108,6 +137,13 @@ def on_frame(data):
         frame = cv2.imdecode(arr, cv2.IMREAD_COLOR)
         if frame is None:
             raise ValueError('bad frame')
+        
+        # Resize to speed up processing
+        h, w = frame.shape[:2]
+        if w > 640:
+            scale = 640 / w
+            new_h = int(h * scale)
+            frame = cv2.resize(frame, (640, new_h))
     except Exception as e:
         emit('error', {'message': 'invalid image', 'exc': str(e)})
         return
@@ -165,19 +201,37 @@ def on_frame(data):
             cv2.circle(frame, (cx, cy), 2, (0, 0, 255), -1)
 
     # overlay metrics text
+    t = TRANSLATIONS.get(_language, TRANSLATIONS['en'])
     overlay_lines = [
-        f"Sport: {sport}",
-        f"Reps: {rep_info.get('count', 0)} ({rep_info.get('phase', '-')})",
-        f"Status: {rep_info.get('status', '')}",
-        f"Conf: {confidence:.2f}"
+        f"{t['Sport']}: {sport}",
+        f"{t['Reps']}: {rep_info.get('count', 0)} ({rep_info.get('phase', '-')})",
+        f"{t['Status']}: {rep_info.get('status', '')}",
+        f"{t['Conf']}: {confidence:.2f}"
     ]
+    
+    # Calibration / Visibility Feedback
+    if confidence < 0.5:
+        overlay_lines.append(t['LOW_VISIBILITY'])
+        overlay_lines.append(t['CHECK_LIGHTING'])
+    
+    # Check if user is too close or too far (based on bounding box size relative to frame)
+    if bb:
+        _, _, ww, hh = bb
+        # Frame height is h
+        if hh < h * 0.3:
+            overlay_lines.append(t['TOO_FAR'])
+        elif hh > h * 0.9:
+            overlay_lines.append(t['TOO_CLOSE'])
+    else:
+        overlay_lines.append(t['NO_PERSON'])
+
     base_y = 30
     for line in overlay_lines:
         cv2.putText(frame, line, (20, base_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (50, 220, 255), 2)
         base_y += 24
 
     # encode as JPEG and send back
-    _, jpeg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+    _, jpeg = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
     # save last annotated for debugging
     # try:
     #     with open(os.path.join(ROOT, 'webapp', 'last_annotated.jpg'), 'wb') as f:
@@ -219,6 +273,15 @@ def on_client_log(data):
         LOG.info('Client log: %s', str(data))
     except Exception:
         LOG.exception('Failed to log client message')
+
+
+@socketio.on('set_language')
+def on_set_language(data):
+    global _language
+    lang = data.get('lang', 'en')
+    if lang in TRANSLATIONS:
+        _language = lang
+        LOG.info('Language set to %s', _language)
 
 
 @socketio.on('shutdown')
@@ -367,12 +430,12 @@ def serve_demo(name):
     return send_from_directory(ROOT, filename)
 
 
-def start_detector():
+def start_detector(complexity=0):
     global pose_detector, tracker
     # import here to avoid heavy imports at module import time
     from src.pose_detector import PoseDetector
     from src.tracker import SimpleTracker
-    pose_detector = PoseDetector(model_complexity=1, smooth=True)
+    pose_detector = PoseDetector(model_complexity=complexity, smooth=True)
     tracker = SimpleTracker(iou_threshold=0.3)
     smoother.reset()
     rep_counter.reset()
@@ -380,7 +443,7 @@ def start_detector():
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument('--host', default='0.0.0.0')
+    p.add_argument('--host', default='127.0.0.1')
     p.add_argument('--port', type=int, default=5000)
     return p.parse_args()
 
