@@ -54,6 +54,8 @@ def test_jump_requires_confidence():
     info = rc.update("jump", pose, confidence=0.2)
     assert info["count"] == 0
     assert info["status"] == "low_confidence"
+    assert "totals" in info
+    assert isinstance(info["totals"], dict)
 
 
 def test_jumping_jack_counts():

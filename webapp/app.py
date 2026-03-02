@@ -167,7 +167,8 @@ def on_frame(data):
     if keypoints:
         kp_dict = keypoints_to_dict(keypoints)
         smoothed = smoother.smooth(kp_dict)
-        confidence = average_visibility(smoothed)
+        required = rep_counter.required_landmarks(sport)
+        confidence = average_visibility(smoothed, required=required) if required else average_visibility(smoothed)
         rep_info = rep_counter.update(sport, smoothed, confidence=confidence)
         # compute bbox similar to demo
         xs = [l[0] for l in keypoints]
