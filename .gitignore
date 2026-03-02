@@ -42,7 +42,9 @@ coverage.xml
 *,cover
 
 # PyEnv
-.python-version
+# .python-version is intentionally tracked for Vercel Python version pinning
+!.python-version
+
 
 # Pyre type checker
 .pyre/
