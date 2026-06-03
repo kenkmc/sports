@@ -20,6 +20,7 @@ const downloadSession = document.getElementById('downloadSession');
 const athleteName = document.getElementById('athleteName');
 const sportSelect = document.getElementById('sportSelect');
 const modeSelect = document.getElementById('modeSelect');
+const translateBtn = document.getElementById('translateBtn');
 const statsChartCtx = document.getElementById('statsChart').getContext('2d');
 
 // Initialize Chart
