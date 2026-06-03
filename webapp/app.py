@@ -5,7 +5,7 @@ Run:
     .\.venv\Scripts\Activate.ps1
     python webapp\app.py
 
-Open in browser: http://localhost:5000
+Open in browser: http://localhost:8080
 """
 import base64
 import io
@@ -17,6 +17,8 @@ import time
 import threading
 import json
 import glob
+import errno
+import socket
 
 # Ensure repo root is on sys.path so `from src.*` imports work when running this file
 ROOT = Path(__file__).resolve().parents[1]
@@ -505,14 +507,32 @@ def start_detector(complexity=0):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument('--host', default='127.0.0.1')
-    p.add_argument('--port', type=int, default=5000)
+    p.add_argument('--host', default='0.0.0.0')
+    p.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8080')))
     return p.parse_args()
+
+
+def resolve_server_port(host, requested_port):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((host, requested_port))
+            return requested_port, False
+    except OSError as exc:
+        if exc.errno != errno.EADDRINUSE:
+            raise
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind((host, 0))
+        return sock.getsockname()[1], True
 
 
 if __name__ == '__main__':
     args = parse_args()
-    print('Starting webapp on http://%s:%s' % (args.host, args.port))
+    port, port_changed = resolve_server_port(args.host, args.port)
+    localhost_url = 'http://localhost:%s' % port
+    if port_changed:
+        print('Port %s is already in use; falling back to %s' % (args.port, port))
+    print('Starting webapp on %s' % localhost_url)
     # Use eventlet for SocketIO server
-    socketio.run(app, host=args.host, port=args.port)
+    socketio.run(app, host=args.host, port=port)
 

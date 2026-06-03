@@ -22,10 +22,10 @@ pip install -r requirements.txt
 2. Launch the web trainer (requires a camera):
 
 ```powershell
-python webapp\app.py --host 127.0.0.1 --port 5000
+python webapp\app.py --host 127.0.0.1 --port 8080
 ```
 
-3. Open <http://127.0.0.1:5000> in Chrome/Edge. Allow camera access, choose a sport, and follow the animated demo. The UI streams your webcam to the server, overlays pose landmarks, and displays:
+3. Open <http://localhost:8080> in Chrome/Edge. Allow camera access, choose a sport, and follow the animated demo. The UI streams your webcam to the server, overlays pose landmarks, and displays:
 
 - Live confidence, FPS, and detected keypoint counts.
 - Sport-specific rep counter and phase/status indicator.
@@ -35,7 +35,7 @@ python webapp\app.py --host 127.0.0.1 --port 5000
 4. Recording & review:
 	- Click **Start Recording** to create a JSONL session file under `webapp/sessions/` (metadata + per-frame counts/confidence).
 	- Use **Stop Recording** to finalize; optional Google Sheets upload runs if `GOOGLE_APPLICATION_CREDENTIALS` and `SHEETS_ID` are set.
-	- Visit <http://127.0.0.1:5000/viewer> to plot session keypoints vs. rep counts and view a quick summary of totals.
+	- Visit <http://localhost:8080/viewer> to plot session keypoints vs. rep counts and view a quick summary of totals.
 
 5. Run automated tests:
 
